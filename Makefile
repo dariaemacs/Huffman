@@ -1,20 +1,23 @@
 CC=g++
 CPPFLAGS=--std=c++17 -Wall -DEBUG
+ILIBS=-I./include
 LDLIBS=-L/usr/local/opt/fltk -lfltk
+SRC_DIR := src
+IDIR := include
 
 all : main
 
 main: main.o huffman.o window.o
 	$(CC) -o main main.o huffman.o window.o $(LDLIBS)
 
-main.o: main.cpp huffman.hpp window.hpp
-	$(CC) $(CPPFLAGS) -c main.cpp
+main.o: $(SRC_DIR)/main.cpp $(IDIR)/*.hpp
+	$(CC) $(CPPFLAGS) $(ILIBS) -c $(SRC_DIR)/main.cpp
 
-huffman.o: huffman.hpp huffman.cpp
-	$(CC) $(CPPFLAGS) -c huffman.cpp
+huffman.o: $(SRC_DIR)/huffman.cpp $(IDIR)/huffman.hpp
+	$(CC) $(CPPFLAGS) $(ILIBS) -c $(SRC_DIR)/huffman.cpp
 
-window.o: window.cpp window.hpp huffman.hpp
-	$(CC) $(CPPFLAGS) -c window.cpp
+window.o: $(SRC_DIR)/window.cpp $(IDIR)/*.hpp
+	$(CC) $(CPPFLAGS) $(ILIBS) -c $(SRC_DIR)/window.cpp
 
 clean:
 	rm -rf *.o main
