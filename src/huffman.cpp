@@ -114,7 +114,7 @@ void Huffman::encode_file() {
 void Huffman::fill_queue(){
   for(int i = 0; i < frequency.size(); ++i){
     if(frequency[i] != 0){
-      pointer node = std::make_shared<Tree>();
+      pointer node = std::make_shared<Node>();
       node->byte_number = i;
       node->frequency = frequency[i];
       queue.push(node);
@@ -160,7 +160,7 @@ void Huffman::build_tree(){
 #endif
 
   while(queue.size() > 1){
-    pointer z = std::make_shared<Tree>();
+    pointer z = std::make_shared<Node>();
 
     pointer x = queue.top();
     queue.pop();
