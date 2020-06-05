@@ -1,5 +1,5 @@
 CC=g++
-CPPFLAGS=--std=c++17 -Wall -DEBUG
+CPPFLAGS=--std=c++17 -Wall
 ILIBS=-I./include
 LDLIBS=-L/usr/local/opt/fltk -lfltk
 SRC_DIR := src
