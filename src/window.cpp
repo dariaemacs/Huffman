@@ -58,10 +58,6 @@ void Huffman_window::initialization(){
     
 }
 
-void Huffman_window::set_name(std::string name){
-  file_name = name;
-}
-
 void load_file(Fl_Widget* w, void* data){
   Huffman_window* hw = (Huffman_window*)data;
 

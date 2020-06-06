@@ -22,26 +22,17 @@ Huffman::Huffman(const std::string name, Huffman_window* w) :
 void Huffman::compress(){    
   std::cout << "============ Compress ===========\n";
 
-  // читаем файл по одному байту и считаем появление каждого символа
-  // Read one by one byte and count each symbol
   encode_file();
 
-  // заполняем очередь с помощью таблицы частот
-  // Fill queue by using frequency vector
   fill_queue();
 
-  // удаляем из очереди первые два элемента, создаем новую вершину, суммируем частоты
-  // удаленных вершин и вставляем её в очередь, а два удаленных элемента становятся детьми новой вершины 
-  // Build a Huffman Tree from input characters
   build_tree();
   root = queue.top();
 
-  // Assign bit sets to each characters (the leafs of tree)
   chs2codes();
 
   write_encoding_file();
 
-  // Send compress result to GUI widget
   gui_compress_result();
     
   std::cout << "=================================\n";
@@ -119,17 +110,10 @@ void Huffman::fill_queue(){
       node->frequency = frequency[i];
       queue.push(node);
     }
-#ifdef DEBUG
-    std::cout << "\rFill queue: " << (int)((i+1)*100.0/frequency.size()) << "%" << std::flush;
-#endif
   }
 
-#ifdef DEBUG
-  std::cout << std::endl;
-#endif
-  
-  if(queue.empty()){
-    std::cerr << "The queue is empty" << std::endl;
+  if (queue.empty()) {
+    std::cerr << "The queue is empty: " << __PRETTY_FUNCTION__ << std::endl; 
     return;
   }
 }
@@ -187,7 +171,6 @@ void Huffman::build_tree(){
 }
 
 void Huffman::message2code(std::ifstream& ifs){
-  // Читаем файл, который нужно зашифровать и меняем символы на коды
   while(true){
     char ch;
     ifs.read (&ch, 1);
@@ -248,8 +231,6 @@ void Huffman::chs2codes(){
 }
 
 void Huffman::write_frequency(std::ofstream& output_file){
-  // Записываем частоты: индекс массива 0 до 255, а затем само значение частоты
-  // Write frequencies: index, value
   for(int j = 0; j < frequency.size(); ++j){
     if(frequency[j]){
       output_file.write((char*) &j, sizeof(uchar));
@@ -259,20 +240,16 @@ void Huffman::write_frequency(std::ofstream& output_file){
 }
   
 void Huffman::write_raw_message(std::ofstream& output_file){
-  int i = 0;
   int byte_round = encode_message.size() / BYTE_SIZE;
   uchar modulo = encode_message.size() - byte_round * BYTE_SIZE;
 
-  // Записываем сколько байт занимает наше сообщение
-  // Write size of message in bytes
   output_file.write((char*) &byte_round, sizeof(byte_round));
-  // Записываем значение остатка от деления на 8 количества требующего шифровки сообщения
-  // Write counter (remainder after dividing by BYTE_SIZE
-
   output_file.write((char*) &modulo, sizeof(uchar));
+
   // Записываем упакованное по 8 бит сообщение
   // Write the message dividing by 8 bits
-  for( ; i < byte_round * BYTE_SIZE; i += BYTE_SIZE){
+  int i;
+  for(i = 0; i < byte_round * BYTE_SIZE; i += BYTE_SIZE){
     std::bitset<BYTE_SIZE> b(encode_message.substr(i, BYTE_SIZE));
     uchar value = b.to_ulong();
     output_file.write((char*) &value, sizeof(uchar));
@@ -292,15 +269,14 @@ void Huffman::write_encoding_file(){
   
   std::ifstream input_file (file_name, std::ifstream::binary);
   std::ofstream output_file(out_file_name, std::ofstream::binary);
-  if (!input_file) {
+
+  if(!input_file){
     std::cerr << "File opening error: " << file_name; 
     return;
   }
   
   message2code(input_file);
 
-  // Считаем количество не нулевых частот
-  // Count not null frequencies
   int count = 0;
   for(int i = 0; i < 0x100; ++i){
     if(frequency[i] != 0){

@@ -52,10 +52,12 @@ public:
     initialization();
   }
   
-  virtual ~Huffman_window(){}
+  virtual ~Huffman_window() = default;
   
   void initialization();
-  void set_name(std::string name);
+  void set_name(std::string name){
+    file_name = name;
+  }
 };
 
 #endif //WINDOW_H
