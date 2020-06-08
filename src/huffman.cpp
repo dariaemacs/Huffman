@@ -80,12 +80,12 @@ void Huffman::encode_file() {
   while(true){
     char ch;
     is.read (&ch, 1);
-    i++;
+    ++i;
 
     if(is.eof()){
       break;
     }
-    frequency[static_cast<unsigned char>(ch)]++;
+    ++frequency[static_cast<unsigned char>(ch)];
 
     int value = (i + file_size/file_step) * 100.0 / file_size;
     gui_set_progress(value);
@@ -218,11 +218,12 @@ void Huffman::chs2codes(){
       tree_stack.pop();
       
       if(tree_stack.size() == 1){
-	// начинаем с одного корня и постепенно добавляем по правому и левому узлу.
-	// обрабатываем узлы и удаляем из стека
-	// заканчиваем, когда остался один корень и, поэтому не можем поставить это условием цикла
-	// или придется ставить в условие громоздкое выражение: пока size > 1 и дети != nullptr
-	// может быть, так потом и сделать 
+	// Begin from one node and every step add one right and left nodes.
+	// Compute nodes and delete from stack.
+	// It's the end when there is root only, but we began with one node is root therefore
+	// we can't use this condition in while loop
+	// or we have to write huge condition while size > 1 и children != nullptr.
+	// Need time to think about it.
 	break;
       }
     }
@@ -280,7 +281,7 @@ void Huffman::write_encoding_file(){
   int count = 0;
   for(int i = 0; i < 0x100; ++i){
     if(frequency[i] != 0){
-      count++;
+      ++count;
     }
   }
 
@@ -348,7 +349,7 @@ void Huffman::read_frequency(std::ifstream& input_file, int& count){
     input_file.read (reinterpret_cast<char*>(&f), sizeof(int));
 
     frequency[static_cast<uchar>(index)] = f;
-    i++;
+    ++i;
 
 #ifdef DEBUG
     std::cout << "\rReading encoding frequency " << file_name << ": " << (int)(i*100.0/count) << "%" << std::flush;
@@ -448,7 +449,7 @@ void Huffman::codes2chs(){
       }else{	
 	if(node->left == nullptr && node->right == nullptr){
 	  found_the_letter(node);
-	  i--;
+	  --i;
 	}
       }
     }else{
@@ -458,7 +459,7 @@ void Huffman::codes2chs(){
       }else{	
 	if(node->left == nullptr && node->right == nullptr){
 	  found_the_letter(node);
-	  i--;
+	  --i;
 	}
       }
     }
@@ -466,7 +467,7 @@ void Huffman::codes2chs(){
     if(i == decode_message.size() - 1){
       if(node->left == nullptr && node->right == nullptr){
 	found_the_letter(node);
-	i--;
+	--i;
       } 
     }
 
