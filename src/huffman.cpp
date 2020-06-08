@@ -103,7 +103,7 @@ void Huffman::encode_file() {
 }
 
 void Huffman::fill_queue(){
-  for(int i = 0; i < frequency.size(); ++i){
+  for(size_t i = 0; i < frequency.size(); ++i){
     if(frequency[i] != 0){
       pointer node = std::make_shared<Node>();
       node->byte_number = i;
@@ -232,7 +232,7 @@ void Huffman::chs2codes(){
 }
 
 void Huffman::write_frequency(std::ofstream& output_file){
-  for(int j = 0; j < frequency.size(); ++j){
+  for(size_t j = 0; j < frequency.size(); ++j){
     if(frequency[j]){
       output_file.write((char*) &j, sizeof(uchar));
       output_file.write((char*) &frequency[j], sizeof(int));
@@ -371,9 +371,10 @@ void Huffman::read_raw_message(std::ifstream& input_file){
   input_file.read (&modulo, sizeof(modulo));
 
   std::stringstream ss;
-  while(decode_message.size() < byte_round * BYTE_SIZE + modulo){
+  size_t entire_block_size = byte_round * BYTE_SIZE;
+  while(decode_message.size() < entire_block_size + modulo){
     // Read the message
-    while(decode_message.size() < byte_round * BYTE_SIZE){
+    while(decode_message.size() < entire_block_size){
       char ch;
       input_file.read(&ch, sizeof (ch));
       
@@ -440,7 +441,7 @@ void Huffman::codes2chs(){
     node = root;
   };
   
-  for(int i = 0; i < decode_message.size(); ++i){
+  for(size_t i = 0; i < decode_message.size(); ++i){
     char ch = decode_message[i];
     if(ch == '0'){
       if(node->left != nullptr){

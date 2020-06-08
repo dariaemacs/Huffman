@@ -2,6 +2,7 @@
 #define WINDOW_H
 
 #include <iostream>
+#include <memory>
 #include <string>
 
 #include <FL/Fl.H>

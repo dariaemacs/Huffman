@@ -1,5 +1,5 @@
 CC=g++
-CPPFLAGS=--std=c++17 -Wall
+CPPFLAGS=--std=c++17 -Wall -Wsign-compare
 ILIBS=-I./include
 LDLIBS=-L/usr/local/opt/fltk -lfltk
 SRC_DIR := src

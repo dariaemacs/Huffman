@@ -2,6 +2,7 @@
 #define NODE_H
 
 #include <iostream>
+#include <memory>
 
 using uchar = unsigned char;
 
