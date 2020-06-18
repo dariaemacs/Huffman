@@ -47,8 +47,9 @@ private:
   void build_tree();
 
   void message2code(std::ifstream& input_file);
-  void chs2codes();
-  
+  void recursive_chs2codes(Node::pointer& node, std::string str);
+  void iterative_chs2codes();
+
   void write_frequency(std::ofstream& output_file);
   void write_raw_message(std::ofstream& output_file);
   void write_encoding_file();

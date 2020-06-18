@@ -29,7 +29,7 @@ void Huffman::compress(){
   build_tree();
   root = queue.top();
 
-  chs2codes();
+  recursive_chs2codes(root, "");
 
   write_encoding_file();
 
@@ -105,9 +105,7 @@ void Huffman::encode_file() {
 void Huffman::fill_queue(){
   for(size_t i = 0; i < frequency.size(); ++i){
     if(frequency[i] != 0){
-      pointer node = std::make_shared<Node>();
-      node->byte_number = i;
-      node->frequency = frequency[i];
+      pointer node = std::make_shared<Node>(static_cast<uchar>(i), frequency[i]);
       queue.push(node);
     }
   }
@@ -118,25 +116,6 @@ void Huffman::fill_queue(){
   }
 }
 
-void set_parent_bytes(pointer& x, pointer& y, pointer& z){
-  std::stringstream ss (" ");
-  if(x->byte_number == 0){
-    ss << "( " << x->bytes << ", ";
-  }else{
-    ss << " (" << x->byte_number << ", ";
-  }
-  if(y->byte_number == 0){
-    ss << " " << y->bytes << ")";
-  }else{
-    ss << y->byte_number << ") ";
-  }
-  if(z->bytes == ""){
-    z->bytes = ss.str();
-  }else{
-    z->bytes = " [" + z->bytes + ", " + ss.str() + "] ";
-  }
-}
-
 void Huffman::build_tree(){
 
 #ifdef DEBUG
@@ -144,21 +123,23 @@ void Huffman::build_tree(){
 #endif
 
   while(queue.size() > 1){
-    pointer z = std::make_shared<Node>();
-
-    pointer x = queue.top();
-    queue.pop();
-    pointer y = queue.top();
+    Node::pointer x = queue.top();
     queue.pop();
 
-    z->frequency = x->frequency + y->frequency;
+    Node::pointer y = queue.top();
+    queue.pop();
 
-    set_parent_bytes(x, y, z);
+    std::string name = "";
+    name += x->get_name();
+    name += y->get_name();
 
+    Node::pointer z = std::make_shared<Node>(name, *x + *y);
     z->left = x;
     z->right = y;
+
     x->parent = z;
     y->parent = z;
+
     queue.push(z);
 
 #ifdef DEBUG
@@ -182,50 +163,64 @@ void Huffman::message2code(std::ifstream& ifs){
   }
 }
 
-void Huffman::chs2codes(){
+void Huffman::recursive_chs2codes(Node::pointer& node, std::string str){
+  if(node->left == nullptr && node->right == nullptr){
+    node->code(str);
+    codes[node->get_byte()] = node->code();
+    
+#ifdef DEBUG
+    std::cout << "[" << node->get_ch() << "]=" << codes[node->get_byte()] << ";\n";
+#endif
+    return;
+  }
+  
+  if(node->left != nullptr){
+    recursive_chs2codes(node->left, str + "0");
+  }
+
+  if(node->right != nullptr){
+    recursive_chs2codes(node->right, str + "1");
+  }
+}
+
+void Huffman::iterative_chs2codes(){
   std::stack<pointer> tree_stack;
   tree_stack.push(root);
   
   pointer node = tree_stack.top();
     
-  while(true){
+  while(!(root->left == nullptr && root->right == nullptr)){
     if(node->right != nullptr){
-      node->right->code = node->code + "1";
+      node->right->code(node->code() + "1");
       tree_stack.push(node->right);
     }
     
     if(node->left != nullptr){
-      node->left->code = node->code + "0";
+      node->left->code(node->code() + "0");
       tree_stack.push(node->left);
     }
     
     if(node->left == nullptr && node->right == nullptr){
-      node->code = node->parent->code;
+      node->code(node->parent->code());
       if(node == node->parent->left){
-	node->code += "0";
+	node->code(node->code() + "0");
 	node->parent->left = nullptr;
       }else if(node == node->parent->right){
-	node->code += "1";
+	node->code(node->code() + "1");
 	node->parent->right = nullptr;
       }
-      codes[node->byte_number] = node->code;
+
+      if(node->is_single()){
+	codes[node->get_byte()] = node->code();
+      }
       
 #ifdef DEBUG
-      if(node->byte_number != 0){
-	std::cout << "leaf: " << *node << " code: " << node->code << "\n";
+      if(node->get_byte() != 0){
+	std::cout << "leaf: " << *node << " code: " << node->code() << "\n";
       }
 #endif
       tree_stack.pop();
       
-      if(tree_stack.size() == 1){
-	// Begin from one node and every step add one right and left nodes.
-	// Compute nodes and delete from stack.
-	// It's the end when there is root only, but we began with one node is root therefore
-	// we can't use this condition in while loop
-	// or we have to write huge condition while size > 1 и children != nullptr.
-	// Need time to think about it.
-	break;
-      }
     }
     node = tree_stack.top();    
   }
@@ -437,7 +432,7 @@ void Huffman::codes2chs(){
 
   auto found_the_letter = [this, &node](pointer&){
     encode_message = "";
-    message += static_cast<char>(node->byte_number);
+    message += node->get_char();
     node = root;
   };
   
@@ -477,9 +472,14 @@ void Huffman::codes2chs(){
     if(i % 20000 == 0){
       Fl::check();
     }
+#ifdef DEBUG
     std::cout << "\rReading decoding " << file_name << ": " << (int)(((i+1) * 100.0)/decode_message.size()) << "%" << std::flush;
+#endif
+
   }
+#ifdef DEBUG
   std::cout << std::endl;
+#endif
 }
 
 
