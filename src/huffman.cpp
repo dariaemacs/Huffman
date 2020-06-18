@@ -169,7 +169,7 @@ void Huffman::recursive_chs2codes(Node::pointer& node, std::string str){
     codes[node->get_byte()] = node->code();
     
 #ifdef DEBUG
-    std::cout << "[" << node->get_ch() << "]=" << codes[node->get_byte()] << ";\n";
+    std::cout << "[" << node->get_char() << "]=" << codes[node->get_byte()] << ";\n";
 #endif
     return;
   }

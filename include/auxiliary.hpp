@@ -12,7 +12,7 @@ inline std::ifstream::pos_type get_filesize(std::string& filename){
 
 template<class T>
 void print(std::vector<T>& v ){
-  for(int i = 0; i < v.size(); ++i){
+  for(size_t i = 0; i < v.size(); ++i){
     std::cout << "[" << i << "] = " << v[i] << ",\t ";
   }
   std::cout << std::endl;

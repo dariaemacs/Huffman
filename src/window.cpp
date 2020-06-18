@@ -58,7 +58,7 @@ void Huffman_window::initialization(){
     
 }
 
-void load_file(Fl_Widget* w, void* data){
+void load_file(Fl_Widget*, void* data){
   Huffman_window* hw = (Huffman_window*)data;
 
   std::cout << "Load file...\n";
@@ -74,7 +74,7 @@ void load_file(Fl_Widget* w, void* data){
   std::cout << "Name: " << hw->file_name << std::endl;
 }
 
-void compress_file(Fl_Widget* w, void* data){
+void compress_file(Fl_Widget*, void* data){
   
   Huffman_window* hw = (Huffman_window*)data;
   Huffman huffman(hw->file_name, hw);
@@ -82,7 +82,7 @@ void compress_file(Fl_Widget* w, void* data){
   huffman.compress();  
 }
 
-void decompress_file(Fl_Widget* w, void* data){
+void decompress_file(Fl_Widget*, void* data){
   
   Huffman_window* hw = (Huffman_window*)data;
   Huffman huffman(hw->file_name, hw);
