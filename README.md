@@ -5,4 +5,6 @@ It works well for text files if file size is greater than 1000 bytes. The compre
 ![Alt text](https://github.com/dariaemacs/Huffman/blob/master/png/small_files_compression.png?raw=true "Optional Title")
 ## How to start
 Compress:   $ make && ./main -c texts/text_hamlet.txt
+
+
 Decompress: $ make && ./main -d texts/text_hamlet.txt.hff
