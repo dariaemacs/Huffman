@@ -7,7 +7,7 @@ IDIR := include
 all : main
 
 main: main.o huffman.o
-	$(CC) -o main main.o huffman.o $(LDLIBS)
+	$(CC) -o main main.o huffman.o
 
 main.o: $(SRC_DIR)/main.cpp $(IDIR)/*.hpp
 	$(CC) $(CPPFLAGS) $(ILIBS) -c $(SRC_DIR)/main.cpp
