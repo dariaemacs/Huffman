@@ -1,52 +1,76 @@
 #include "huffman.hpp"
-#include "window.hpp"
 #include "auxiliary.hpp"
 
 #include <iostream>
 #include <fstream>
 #include <bitset>
-#include <thread>
+#include <limits>
 
-#include <FL/Fl.H>
+const std::string Huffman::TYPE = ".hff";
 
-Huffman::Huffman(const std::string name, Huffman_window* w) :
-  hw(w), file_name(name), frequency(0x100, 0), codes(0x100, "")
+Huffman::Huffman(const std::string name) :
+  file_name(name), frequency(0x100, 0), codes(0x100, "")
 {
   file_size = get_filesize(file_name);
-  
-  std::stringstream ss;
-  ss << "File size: " << file_size << " Kb";
-  hw->size_box1->copy_label(ss.str().c_str());
 }
 
-void Huffman::compress(){    
+int Huffman::compress(){    
   std::cout << "============ Compress ===========\n";
 
-  encode_file();
+  int ret = encode_file();
+  if(ret == -1){
+    std::cerr << "Error in encode file." << std::endl;
+    return -1;
+  }
 
-  fill_queue();
+  ret = fill_queue();
+  if(ret == -1){
+    std::cerr << "Error in fill queue." << std::endl;
+    return -1;
+  }
 
   build_tree();
   root = queue.top();
 
   recursive_chs2codes(root, "");
 
-  write_encoding_file();
+  ret = write_encoding_file();
+  if(ret == -1){
+    std::cerr << "Error in write encoding file." << std::endl;
+    return -1;
+  }
 
-  gui_compress_result();
-    
+  std::cout << "Normal file size:     " << file_size     << " b\n";
+  std::cout << "Compressed file size: " << new_file_size << " b\n";
+  
+  float ratio = ((float)new_file_size * 100) / file_size;
+  if(ratio > 100){
+    std::cout << "Compression isn't effective. File is too small.\n";
+  }else{
+    std::cout << "Efficiency of compression: " << ratio << " %\n";
+  }
   std::cout << "=================================\n";
+  return 0;
 }
 
-void Huffman::decompress(){
+int Huffman::decompress(){
   std::cout << "============ Decompress =========\n";
 
   check_file_name();
     
   decode_message = "";
-  read_decoding_file();
+  int ret = read_decoding_file();
+  if(ret == -1){
+    std::cerr << "Error in read decoding file." << std::endl;
+    return -1;
+  }
     
-  fill_queue();
+  ret = fill_queue();
+  if(ret == -1){
+    std::cerr << "Error in fill queue." << std::endl;
+    return -1;
+  }
+
     
   build_tree();
   root = queue.top();
@@ -55,28 +79,25 @@ void Huffman::decompress(){
     
   write_decoding_file();
 
-  gui_decompress_result();
+  std::cout << "Compressed file size:   " << file_size     << " b\n";
+  std::cout << "Decompressed file size: " << new_file_size << " b\n";
 
   std::cout << "=================================\n";
+  return 0;
 }
 
-
-void Huffman::gui_set_progress(int value){
-  std::stringstream ss;
-  ss << value << "%";
-  hw->progress->value(value);
-  hw->progress->copy_label(ss.str().c_str());
-}
-
-void Huffman::encode_file() {
+int Huffman::encode_file() {
   std::ifstream is (file_name, std::ifstream::binary);
   if (!is) {
-    std::cerr << "File opening error: " << file_name; 
-    return;
+    std::cerr << "File opening error: " << file_name << std::endl; 
+    return -1;
   }
   
   int i = 0;
-  int file_step = 1000;
+  int file_step = file_size/200;
+  if(file_step == 0){
+    file_step = 10;
+  }
   while(true){
     char ch;
     is.read (&ch, 1);
@@ -86,23 +107,27 @@ void Huffman::encode_file() {
       break;
     }
     ++frequency[static_cast<unsigned char>(ch)];
-
-    int value = (i + file_size/file_step) * 100.0 / file_size;
-    gui_set_progress(value);
     if(i % file_step == 0){
-      Fl::check();
+      int value = i * 100.0 / file_size;
+      std::cout << "\rReading file " << i << ": " << value << "%" << std::flush;
     }
-    std::cout << "\rReading file " << i << ": " << value << "%" << std::flush;
   }
-
-  std::cout << std::endl;
+  std::cout << "\rReading file "<< file_size << ": 100%" << std::flush;
+  std::cout << "\n" << std::endl;
 
 #ifdef DEBUG
   print(frequency);
 #endif
+  auto max_value = std::max_element(frequency.begin(), frequency.end());
+  if(*max_value >= std::numeric_limits<int>::max()){
+    std::cout << "This file is too big. Maximum frequency value must be less "
+	      << std::numeric_limits<int>::max() << ", but it is " << *max_value << std::endl;
+    return -1;
+  }
+  return 0;
 }
 
-void Huffman::fill_queue(){
+int Huffman::fill_queue(){
   for(size_t i = 0; i < frequency.size(); ++i){
     if(frequency[i] != 0){
       pointer node = std::make_shared<Node>(static_cast<uchar>(i), frequency[i]);
@@ -112,8 +137,9 @@ void Huffman::fill_queue(){
 
   if (queue.empty()) {
     std::cerr << "The queue is empty: " << __PRETTY_FUNCTION__ << std::endl; 
-    return;
+    return -1;
   }
+  return 0;
 }
 
 void Huffman::build_tree(){
@@ -236,8 +262,8 @@ void Huffman::write_frequency(std::ofstream& output_file){
 }
   
 void Huffman::write_raw_message(std::ofstream& output_file){
-  int byte_round = encode_message.size() / BYTE_SIZE;
-  uchar modulo = encode_message.size() - byte_round * BYTE_SIZE;
+  int byte_round = encode_message.size() / CHAR_BIT;
+  uchar modulo = encode_message.size() % CHAR_BIT;
 
   output_file.write((char*) &byte_round, sizeof(byte_round));
   output_file.write((char*) &modulo, sizeof(uchar));
@@ -245,8 +271,8 @@ void Huffman::write_raw_message(std::ofstream& output_file){
   // Записываем упакованное по 8 бит сообщение
   // Write the message dividing by 8 bits
   int i;
-  for(i = 0; i < byte_round * BYTE_SIZE; i += BYTE_SIZE){
-    std::bitset<BYTE_SIZE> b(encode_message.substr(i, BYTE_SIZE));
+  for(i = 0; i < byte_round * CHAR_BIT; i += CHAR_BIT){
+    std::bitset<CHAR_BIT> b(encode_message.substr(i, CHAR_BIT));
     uchar value = b.to_ulong();
     output_file.write((char*) &value, sizeof(uchar));
   }
@@ -254,31 +280,26 @@ void Huffman::write_raw_message(std::ofstream& output_file){
   // Записываем лишние биты, которые не поместились в 8 бит
   // Write last bites 
   if(modulo > 0){
-    std::bitset<BYTE_SIZE> b(encode_message.substr(i, modulo));
+    std::bitset<CHAR_BIT> b(encode_message.substr(i, modulo));
     uchar value = b.to_ulong();
     output_file.write((char*) &value, sizeof(char));
   }
 }
 
-void Huffman::write_encoding_file(){
+int Huffman::write_encoding_file(){
   out_file_name = file_name + TYPE;
   
   std::ifstream input_file (file_name, std::ifstream::binary);
   std::ofstream output_file(out_file_name, std::ofstream::binary);
 
   if(!input_file){
-    std::cerr << "File opening error: " << file_name; 
-    return;
+    std::cerr << "File opening error: " << file_name << std::endl; 
+    return -1;
   }
   
   message2code(input_file);
 
-  int count = 0;
-  for(int i = 0; i < 0x100; ++i){
-    if(frequency[i] != 0){
-      ++count;
-    }
-  }
+  uchar count = count_if(frequency.begin(), frequency.end(), [](const auto& value) { return value != 0; } );
 
   // Первым делом записываем количество не нулевых частот символов
   // First of all need to write number of not null frequencies
@@ -310,32 +331,11 @@ void Huffman::write_encoding_file(){
 	      << ((float)new_file_size * 100 / file_size) << "%" << std::endl;
   }
 #endif
+  return 0;
 }
 
-void Huffman::gui_compress_result(){
-  hw->outfile_box->show();
-  hw->size_box2->show();
-  hw->info->show();
-    
-  std::size_t found = out_file_name.find_last_of("/\\");
-    
-  std::stringstream ss;
-  ss << "Output file name: " << out_file_name.substr(found + 1);
-    
-  hw->outfile_box->copy_label(ss.str().c_str());
-  ss.str("");
-  ss << "Output file size: " << new_file_size << " Kb";
-  hw->size_box2->copy_label(ss.str().c_str());
-
-  ss.str("");
-  ratio = ((float)new_file_size * 100 / file_size);
-  ss << "Efficiency: " << ratio << " %";
-    
-  hw->info->copy_label(ss.str().c_str());
-}
-
-void Huffman::read_frequency(std::ifstream& input_file, int& count){
-  int i = 0;
+void Huffman::read_frequency(std::ifstream& input_file, uchar& count){
+  uchar i = 0;
   while(i < count){
     char index;
     input_file.read (&index, sizeof(index));
@@ -361,19 +361,19 @@ void Huffman::read_raw_message(std::ifstream& input_file){
   int byte_round = 0;
   input_file.read (reinterpret_cast<char*>(&byte_round), sizeof(int));
 
-  // Read counter (remainder after dividing by BYTE_SIZE
+  // Read counter (remainder after dividing by CHAR_BIT
   char modulo;
   input_file.read (&modulo, sizeof(modulo));
 
   std::stringstream ss;
-  size_t entire_block_size = byte_round * BYTE_SIZE;
+  size_t entire_block_size = byte_round * CHAR_BIT;
   while(decode_message.size() < entire_block_size + modulo){
     // Read the message
     while(decode_message.size() < entire_block_size){
       char ch;
       input_file.read(&ch, sizeof (ch));
       
-      std::bitset<BYTE_SIZE> b(ch);
+      std::bitset<CHAR_BIT> b(ch);
       
       decode_message += b.to_string();
     }
@@ -381,44 +381,31 @@ void Huffman::read_raw_message(std::ifstream& input_file){
     // Read remainder
     char ch;
     input_file.read(&ch, sizeof(ch));
-    std::bitset<BYTE_SIZE> b(ch);
-    decode_message += (b.to_string()).substr(BYTE_SIZE - modulo, BYTE_SIZE); 
+    std::bitset<CHAR_BIT> b(ch);
+    decode_message += (b.to_string()).substr(CHAR_BIT - modulo, CHAR_BIT); 
   }
   std::cout << std::endl;
 }
 
 void Huffman::check_file_name(){
-  const std::regex hff_regex("^[A-Za-z0-9-_.]+\\" + TYPE);
-  std::size_t found = file_name.find_last_of("/\\");
-  
-  std::stringstream ss;
-  ss << "File name: " << file_name.substr(found + 1);
-  std::string tmp_file_name = file_name.substr(found + 1);
-    
-  std::cout << "Does file name include .hff? :"
-	    << std::regex_match(tmp_file_name, hff_regex) << " : " << tmp_file_name << std::endl;
-
-  if(std::regex_match(tmp_file_name, hff_regex)){
-    out_file_name = file_name.substr(0, found + 1) + tmp_file_name.substr(0, tmp_file_name.size() - 4);
-    out_file_name += ".1";
-  }else{
-    out_file_name = file_name.substr(0, found) + tmp_file_name + ".1";
-    file_name = file_name.substr(0, found) + tmp_file_name + ".hff";
-  }
+  out_file_name = file_name.substr(0, file_name.size() - TYPE.size());
+  out_file_name += ".1";
+  std::cout << "Output file: " << out_file_name << std::endl;
 }
 
-void Huffman::read_decoding_file(){
+int Huffman::read_decoding_file(){
   std::ifstream input_file (file_name, std::ifstream::binary);
   if (!input_file) {
-    std::cerr << "File opening error: " << file_name; 
-    return;
+    std::cerr << "File opening error: " << file_name << std::endl;
+    return -1;
   }
 
-  int count = 0;
-  input_file.read (reinterpret_cast<char*>(&count), sizeof(int));
+  uchar count = 0;
+  input_file.read (reinterpret_cast<char*>(&count), sizeof(count));
 
   read_frequency(input_file, count);  
   read_raw_message(input_file);
+  return 0;
 }
 
 
@@ -467,11 +454,7 @@ void Huffman::codes2chs(){
       } 
     }
 
-    int value = (i + 1) * 100.0/decode_message.size();
-    gui_set_progress(value);
-    if(i % 20000 == 0){
-      Fl::check();
-    }
+    //    int value = (i + 1) * 100.0/decode_message.size();
 #ifdef DEBUG
     std::cout << "\rReading decoding " << file_name << ": " << (int)(((i+1) * 100.0)/decode_message.size()) << "%" << std::flush;
 #endif
@@ -480,29 +463,6 @@ void Huffman::codes2chs(){
 #ifdef DEBUG
   std::cout << std::endl;
 #endif
-}
-
-
-void Huffman::gui_decompress_result(){
-  hw->outfile_box->show();
-  hw->size_box2->show();
-  hw->info->show();
-    
-  size_t found = out_file_name.find_last_of("/\\");
-    
-  std::stringstream ss;
-  ss << "Output file name: " << out_file_name.substr(found + 1);
-    
-  hw->outfile_box->copy_label(ss.str().c_str());
-  ss.str("");
-  ss << "Output file size: " << new_file_size << " Kb";
-  hw->size_box2->copy_label(ss.str().c_str());
-
-  ss.str("");
-  ratio = ((float)file_size * 100 / new_file_size);
-  ss << "Efficiency: " << ratio << " %";
-    
-  hw->info->copy_label(ss.str().c_str());
 }
 
 void Huffman::write_decoding_file(){

@@ -11,12 +11,6 @@ using priority_queue_t = std::priority_queue<pointer, std::vector<pointer>, Grea
 class Huffman_window;
 
 class Huffman{
-  const std::string TYPE = ".hff";
-  static const int BYTE_SIZE {8};
-
-  Huffman_window * hw;
-  
-  int ratio         {0};
   int file_size     {0};
   int new_file_size {0};
   
@@ -34,16 +28,18 @@ class Huffman{
   std::string message;
 
 public:
-  Huffman(const std::string name, Huffman_window* w);
+  static const std::string TYPE;
+
+  Huffman(const std::string name);
    
   virtual ~Huffman() = default;
   
-  void compress();
-  void decompress();
+  int compress();
+  int decompress();
   
 private:
-  void encode_file();
-  void fill_queue();
+  int encode_file();
+  int fill_queue();
   void build_tree();
 
   void message2code(std::ifstream& input_file);
@@ -52,21 +48,16 @@ private:
 
   void write_frequency(std::ofstream& output_file);
   void write_raw_message(std::ofstream& output_file);
-  void write_encoding_file();
+  int  write_encoding_file();
   
-  void gui_compress_result();
-  
-  void read_frequency(std::ifstream& input_file, int& count);
+  void read_frequency(std::ifstream& input_file, uchar& count);
   void read_raw_message(std::ifstream& input_file);
-  void read_decoding_file();
+  int  read_decoding_file();
 
   void check_file_name();
   void codes2chs();
   void write_decoding_file();
   
-  void gui_decompress_result();
-  void gui_set_progress(int value);
-
 };
 
 

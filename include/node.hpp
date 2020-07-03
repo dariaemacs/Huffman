@@ -59,9 +59,9 @@ public:
 private:
   std::string name{""};
 
-  uchar ch                {0};    // номер символа 
-  int   frequency         {0};    // частота этого символа/символов  
-  std::string code_string {""};   // кодовая строка из 0 и 1
+  uchar ch                {0};    // number of byte 
+  int   frequency         {0};    // byte frequency  
+  std::string code_string {""};   // string of Huffman codes
 };
 
 using pointer = Node::pointer;
