@@ -30,7 +30,7 @@ class Huffman{
 public:
   static const std::string TYPE;
 
-  Huffman(const std::string name);
+  Huffman(const std::string name): file_name(name), frequency(0x100, 0), codes(0x100, "") {}
    
   virtual ~Huffman() = default;
   
@@ -56,7 +56,7 @@ private:
 
   void check_file_name();
   void codes2chs();
-  void write_decoding_file();
+  int  write_decoding_file();
   
 };
 

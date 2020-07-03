@@ -8,13 +8,13 @@
 
 const std::string Huffman::TYPE = ".hff";
 
-Huffman::Huffman(const std::string name) :
-  file_name(name), frequency(0x100, 0), codes(0x100, "")
-{
+int Huffman::compress(){
   file_size = get_filesize(file_name);
-}
+  if(file_size < 0){
+    std::cerr << "Can't get file size." << std::endl;
+    return -1;
+  }
 
-int Huffman::compress(){    
   std::cout << "============ Compress ===========\n";
 
   int ret = encode_file();
@@ -54,6 +54,7 @@ int Huffman::compress(){
 }
 
 int Huffman::decompress(){
+  file_size = get_filesize(file_name);
   std::cout << "============ Decompress =========\n";
 
   check_file_name();
@@ -77,8 +78,12 @@ int Huffman::decompress(){
 
   codes2chs();
     
-  write_decoding_file();
-
+  ret = write_decoding_file();
+  if(ret == -1){
+    std::cerr << "Error in writing decoding file." << std::endl;
+    return -1;
+  }
+  
   std::cout << "Compressed file size:   " << file_size     << " b\n";
   std::cout << "Decompressed file size: " << new_file_size << " b\n";
 
@@ -321,6 +326,11 @@ int Huffman::write_encoding_file(){
   output_file.close();
 
   new_file_size = get_filesize(out_file_name);
+  if(new_file_size < 0){
+    std::cerr << "Can't get file size." << std::endl;
+    return -1;
+  }
+
 #ifdef DEBUG
   ratio = ((float)new_file_size * 100 / file_size);
   if(ratio < 100){
@@ -458,22 +468,32 @@ void Huffman::codes2chs(){
 #ifdef DEBUG
     std::cout << "\rReading decoding " << file_name << ": " << (int)(((i+1) * 100.0)/decode_message.size()) << "%" << std::flush;
 #endif
-
+    
   }
 #ifdef DEBUG
   std::cout << std::endl;
 #endif
 }
 
-void Huffman::write_decoding_file(){
+int Huffman::write_decoding_file(){
   std::ofstream output_file(out_file_name);
+  if(!output_file){
+    std::cerr << "Error in opening output file." << std::endl;
+    return -1;
+  }
+  
   output_file << message;
   output_file.close();
-
-  new_file_size = get_filesize(out_file_name);
   
+  new_file_size = get_filesize(out_file_name);
+  if(new_file_size < 0){
+    std::cerr << "Can't get file size." << std::endl;
+    return -1;
+  }
+
 #ifdef DEBUG
   std::cout << "Decoding complete: " << out_file_name << ". Uncompressing: " << std::setprecision(3)
 	    << ((float)new_file_size * 100 / file_size) << "%" << std::endl;
 #endif
+  return 0;
 }

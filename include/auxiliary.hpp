@@ -7,6 +7,10 @@
 
 inline std::ifstream::pos_type get_filesize(std::string& filename){
   std::ifstream in(filename, std::ifstream::ate);
+  if(!in){
+    std::cerr << "File opening error: " << filename << ". Can't get file size" << std::endl; 
+    return -1;
+  }
   return in.tellg();
 }
 
