@@ -241,7 +241,7 @@ void Huffman::iterative_chs2codes(){
 	node->parent->right = nullptr;
       }
 
-      if(node->is_single()){
+      if(node->is_leaf()){
 	codes[node->get_byte()] = node->code();
       }
       
@@ -420,17 +420,11 @@ int Huffman::read_decoding_file(){
 
 
 void Huffman::codes2chs(){
-  std::stack<pointer> tree_stack;
-  tree_stack.push(root);
-    
-  pointer node = tree_stack.top();
+  Node::pointer node = root;
 
-  encode_message = "";
-
-  auto found_the_letter = [this, &node](pointer&){
-    encode_message = "";
-    message += node->get_char();
-    node = root;
+  auto found_the_letter = [this](Node::pointer& n){
+    message += n->get_byte();
+    n = root;
   };
   
   for(size_t i = 0; i < decode_message.size(); ++i){
@@ -438,31 +432,62 @@ void Huffman::codes2chs(){
     if(ch == '0'){
       if(node->left != nullptr){
 	node = node->left;
-	encode_message += "0";
-      }else{	
-	if(node->left == nullptr && node->right == nullptr){
+	if(node->is_leaf()){
 	  found_the_letter(node);
-	  --i;
 	}
       }
-    }else{
+    }else if(ch == '1'){
       if(node->right != nullptr){
 	node = node->right;
-	encode_message += "1";
-      }else{	
-	if(node->left == nullptr && node->right == nullptr){
+	if(node->is_leaf()){
 	  found_the_letter(node);
-	  --i;
 	}
       }
     }
 
-    if(i == decode_message.size() - 1){
-      if(node->left == nullptr && node->right == nullptr){
-	found_the_letter(node);
-	--i;
-      } 
-    }
+  // std::stack<pointer> tree_stack;
+  // tree_stack.push(root);
+    
+  // pointer node = tree_stack.top();
+
+  // encode_message = "";
+
+  // auto found_the_letter = [this, &node](pointer&){
+  //   encode_message = "";
+  //   message += node->get_char();
+  //   node = root;
+  // };
+  
+  // for(size_t i = 0; i < decode_message.size(); ++i){
+  //   char ch = decode_message[i];
+  //   if(ch == '0'){
+  //     if(node->left != nullptr){
+  // 	node = node->left;
+  // 	encode_message += "0";
+  //     }else{	
+  // 	if(node->left == nullptr && node->right == nullptr){
+  // 	  found_the_letter(node);
+  // 	  --i;
+  // 	}
+  //     }
+  //   }else{
+  //     if(node->right != nullptr){
+  // 	node = node->right;
+  // 	encode_message += "1";
+  //     }else{	
+  // 	if(node->left == nullptr && node->right == nullptr){
+  // 	  found_the_letter(node);
+  // 	  --i;
+  // 	}
+  //     }
+  //   }
+
+  //   if(i == decode_message.size() - 1){
+  //     if(node->left == nullptr && node->right == nullptr){
+  // 	found_the_letter(node);
+  // 	--i;
+  //     } 
+  //   }
 
     //    int value = (i + 1) * 100.0/decode_message.size();
 #ifdef DEBUG

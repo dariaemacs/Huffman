@@ -4,7 +4,6 @@
 #include "node.hpp"
 
 #include <queue>
-#include <regex>
 
 using priority_queue_t = std::priority_queue<pointer, std::vector<pointer>, Greater>;
 

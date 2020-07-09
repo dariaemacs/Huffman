@@ -28,8 +28,12 @@ public:
     return frequency;
   }
 
-  bool is_single() const {
-    return ch != 0;
+  // bool is_single() const {
+  //   return ch != 0;
+  // }
+
+  bool is_leaf() const {
+    return (left == nullptr && right == nullptr);
   }
 
   uchar get_byte() const {
@@ -41,10 +45,10 @@ public:
   }
 
   std::string get_name() const {
-    if(is_single()){
-      return std::string(1, get_char());
-    }else{
+    if(ch == 0){
       return name;
+    }else{
+      return std::string(1, get_char());
     }
   }
 
@@ -55,6 +59,7 @@ public:
   void code(const std::string& c){
     code_string = c;
   }
+
   
 private:
   std::string name{""};
@@ -67,15 +72,7 @@ private:
 using pointer = Node::pointer;
 
 inline std::ostream & operator<<(std::ostream & os, const Node& node){
-  if(node.is_single()){
-    if(node.ch == 10){
-      return os << "[\\n] = " << node.frequency;
-    }else{
-      return os << "[" << node.ch << "] = " << node.frequency;
-    }
-  }else{
-    return os << "[" << node.name << "] = " << node.frequency;
-  }
+  return os << "[" << node.get_name() << "] = " << node.frequency;
 }
 
 class Greater{
