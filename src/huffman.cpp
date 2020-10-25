@@ -1,4 +1,5 @@
 #include "huffman.hpp"
+#include "window.hpp"
 #include "auxiliary.hpp"
 
 #include <iostream>
@@ -6,10 +7,19 @@
 #include <bitset>
 #include <limits>
 
-const std::string Huffman::TYPE = ".hff";
+#include <FL/Fl.H>
+
+Huffman::Huffman(const std::string name, Huffman_window* w) :
+  hw(w), file_name(name), frequency(0x100, 0), codes(0x100, "")
+{
+  file_size = get_filesize(file_name);
+
+  std::stringstream ss;
+  ss << "File size: " << file_size << " Kb";
+  hw->size_box1->copy_label(ss.str().c_str());
+}
 
 int Huffman::compress(){
-  file_size = get_filesize(file_name);
   if(file_size < 0){
     std::cerr << "Can't get file size." << std::endl;
     return -1;
@@ -39,6 +49,8 @@ int Huffman::compress(){
     std::cerr << "Error in write encoding file." << std::endl;
     return -1;
   }
+
+  gui_compress_result();
 
   std::cout << "Normal file size:     " << file_size     << " b\n";
   std::cout << "Compressed file size: " << new_file_size << " b\n";
@@ -83,6 +95,8 @@ int Huffman::decompress(){
     std::cerr << "Error in writing decoding file." << std::endl;
     return -1;
   }
+
+  gui_decompress_result();
   
   std::cout << "Compressed file size:   " << file_size     << " b\n";
   std::cout << "Decompressed file size: " << new_file_size << " b\n";
@@ -90,6 +104,15 @@ int Huffman::decompress(){
   std::cout << "=================================\n";
   return 0;
 }
+
+
+void Huffman::gui_set_progress(int value){
+  std::stringstream ss;
+  ss << value << "%";
+  hw->progress->value(value);
+  hw->progress->copy_label(ss.str().c_str());
+}
+
 
 int Huffman::encode_file() {
   std::ifstream is (file_name, std::ifstream::binary);
@@ -112,10 +135,12 @@ int Huffman::encode_file() {
       break;
     }
     ++frequency[static_cast<unsigned char>(ch)];
+    int value = (i + file_size/file_step) * 100.0 / file_size;
+    gui_set_progress(value);
     if(i % file_step == 0){
-      int value = i * 100.0 / file_size;
-      std::cout << "\rReading file " << i << ": " << value << "%" << std::flush;
+      Fl::check();
     }
+    std::cout << "\rReading file " << i << ": " << value << "%" << std::flush;
   }
   std::cout << "\rReading file "<< file_size << ": 100%" << std::flush;
   std::cout << "\n" << std::endl;
@@ -476,3 +501,49 @@ int Huffman::write_decoding_file(){
 #endif
   return 0;
 }
+
+
+void Huffman::gui_compress_result(){
+  hw->outfile_box->show();
+  hw->size_box2->show();
+  hw->info->show();
+    
+  std::size_t found = out_file_name.find_last_of("/\\");
+    
+  std::stringstream ss;
+  ss << "Output file name: " << out_file_name.substr(found + 1);
+    
+  hw->outfile_box->copy_label(ss.str().c_str());
+  ss.str("");
+  ss << "Output file size: " << new_file_size << " Kb";
+  hw->size_box2->copy_label(ss.str().c_str());
+
+  ss.str("");
+  ratio = ((float)new_file_size * 100 / file_size);
+  ss << "Efficiency: " << ratio << " %";
+    
+  hw->info->copy_label(ss.str().c_str());
+}
+
+void Huffman::gui_decompress_result(){
+  hw->outfile_box->show();
+  hw->size_box2->show();
+  hw->info->show();
+    
+  size_t found = out_file_name.find_last_of("/\\");
+    
+  std::stringstream ss;
+  ss << "Output file name: " << out_file_name.substr(found + 1);
+    
+  hw->outfile_box->copy_label(ss.str().c_str());
+  ss.str("");
+  ss << "Output file size: " << new_file_size << " Kb";
+  hw->size_box2->copy_label(ss.str().c_str());
+
+  ss.str("");
+  ratio = ((float)file_size * 100 / new_file_size);
+  ss << "Efficiency: " << ratio << " %";
+    
+  hw->info->copy_label(ss.str().c_str());
+}
+

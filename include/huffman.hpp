@@ -10,6 +10,11 @@ using priority_queue_t = std::priority_queue<pointer, std::vector<pointer>, Grea
 class Huffman_window;
 
 class Huffman{
+  const std::string TYPE = ".hff";
+
+  Huffman_window * hw;
+
+  int ratio         {0};
   int file_size     {0};
   int new_file_size {0};
   
@@ -27,9 +32,7 @@ class Huffman{
   std::string message;
 
 public:
-  static const std::string TYPE;
-
-  Huffman(const std::string name): file_name(name), frequency(0x100, 0), codes(0x100, "") {}
+  Huffman(const std::string name, Huffman_window* w);
    
   virtual ~Huffman() = default;
   
@@ -48,7 +51,9 @@ private:
   void write_frequency(std::ofstream& output_file);
   void write_raw_message(std::ofstream& output_file);
   int  write_encoding_file();
-  
+
+  void gui_compress_result();
+
   void read_frequency(std::ifstream& input_file, uchar& count);
   void read_raw_message(std::ifstream& input_file);
   int  read_decoding_file();
@@ -56,7 +61,9 @@ private:
   void check_file_name();
   void codes2chs();
   int  write_decoding_file();
-  
+
+  void gui_decompress_result();
+  void gui_set_progress(int value);
 };
 
 
